@@ -27,27 +27,35 @@ async function sendMainMenu(userId) {
     const menuText = `Por favor, seleccione una opción:
 1. Tiene obligaciones pendientes con alguna entidad financiera  
 2. Certificaciones
-3. PQRS
+3. Peticiones Quejas Reclamos Sugerencia 
 4. Proveedores
-5. Trabaje con nosotros`;
+5. Trabaje con nosotros
+6. Sobre nosotros`;
     await sendMessage(userId, menuText);
 }
 
 async function sendBackToMenuMessage(userId) {
-    await sendMessage(userId, "Escriba 'Menu' para volver al menú principal");
+    await sendMessage(userId, "Escriba '0' para volver al menú principal");
 }
 
 async function sendEntitiesMenu(userId) {
     const entitiesText = `Su obligación es con:
-1. Banco Caja Social 573125207598
-2. Azzorti 573102629725
-3. GMF 573113590881
-4. Microserfil Panama 5078388521
-5. Gabrica 573217329063`;
+1. Banco Caja Social 
+2. Azzorti 
+3. GMF 
+4. Microserfil Panamá 
+5. Gabrica 
+6. Volver al menú principal`;
     await sendMessage(userId, entitiesText);
 }
 
 async function handleEntitiesResponse(userId, message) {
+    if (message === '6') {
+        await sendMainMenu(userId);
+        chatStates.set(userId, 'main_Menu');
+        return;
+    }
+
     const entities = {
         '1': '573125207598',
         '2': '573102629725',
@@ -73,7 +81,7 @@ async function sendWorkOptions(userId) {
 async function handleWorkOptionsResponse(userId, message) {
     switch (message) {
         case '1':
-            await sendMessage(userId, "Salario 1.300.000 más comisiones, si te interesa envía tu Hoja de Vida a aux.administrativa@contactosycobranzas.com con el asunto Asesor");
+            await sendMessage(userId, "Salario 1.300.000$ más comisiones, si te interesa envía tu Hoja de Vida a aux.administrativa@contactosycobranzas.com con el asunto Asesor");
             break;
         default:
             await sendMessage(userId, "Opción no válida.");
@@ -109,6 +117,10 @@ async function handleMainMenuResponse(userId, message) {
             await new Promise(resolve => setTimeout(resolve, 1500));
             await sendWorkOptions(userId);
             break;
+        case '6':
+            await sendMessage(userId, "Para conocer más sobre nosotros, visite nuestra página web: https://www.contactosycobranzas.com/");
+            await sendBackToMenuMessage(userId);
+            break;
         default:
             await sendMessage(userId, "Opción no válida.");
             await sendBackToMenuMessage(userId);
@@ -128,13 +140,15 @@ async function handleIncomingMessage(userId, message) {
     let state = chatStates.get(userId);
     
     if (!state) {
-        await sendMessage(userId, "¡Hola! Soy el bot del area administrativa de contactos y cobranzas");
+        await sendMessage(userId, "¡Hola! Soy el bot del área administrativa de Contactos y Cobranzas");
         await sendMainMenu(userId);
         chatStates.set(userId, 'main_Menu');
         return;
     }
 
-    if (message.toLowerCase() === 'menu') {
+    const menuVariations = ['0'];
+    
+    if (menuVariations.includes(message.trim())) {
         await sendMainMenu(userId);
         chatStates.set(userId, 'main_Menu');
         return;
@@ -157,8 +171,11 @@ async function handleIncomingMessage(userId, message) {
 }
 
 client.on('message', async (message) => {
-    const userId = message.from;
-    await handleIncomingMessage(userId, message.body);
+    try {
+        await handleIncomingMessage(message.from, message.body);
+    } catch (error) {
+        console.error('Error processing message:', error);
+    }
 });
 
 client.initialize();
